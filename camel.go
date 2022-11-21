@@ -69,12 +69,87 @@ func toCamelInitCase(s string, initCase bool) string {
 	return n.String()
 }
 
+const diff_toLower byte = 'a' - 'A' // 32
+const diff_toUpper = 'A' - 'a'      // -32
+
+// only split at boundary: '_. -'
+func toCamelInitCaseV2(s string, initCase bool, toCamelMap map[string]string) string {
+	if len(toCamelMap) == 0 {
+		return toCamelInitCase(s, initCase)
+	}
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return s
+	}
+	n := strings.Builder{}
+	n.Grow(len(s))
+
+	capNext := initCase
+	sz := len(s)
+	if sz > 12 {
+		sz = 12
+	}
+	word := make([]byte, 0, sz)
+
+	for i, v := range []byte(s) {
+		vIsCap := v >= 'A' && v <= 'Z'
+		vIsLow := v >= 'a' && v <= 'z'
+		if capNext {
+			if vIsLow {
+				if len(word) > 0 {
+					newWord, ok := toCamelMap[string(word)]
+					if ok {
+						n.WriteString(newWord)
+					} else {
+						n.Write(word)
+					}
+					word = word[0:0]
+				}
+				v -= diff_toLower // to upper
+			}
+		} else if i == 0 {
+			if vIsCap {
+				v += diff_toLower
+			}
+		}
+		if vIsCap || vIsLow {
+			word = append(word, v)
+			capNext = false
+		} else if vIsNum := v >= '0' && v <= '9'; vIsNum {
+			word = append(word, v)
+			capNext = true
+		} else {
+			capNext = v == '_' || v == ' ' || v == '-' || v == '.'
+		}
+	}
+	// the finaly word
+	if len(word) > 0 {
+		newWord, ok := toCamelMap[string(word)]
+		if ok {
+			n.WriteString(newWord)
+		} else {
+			n.Write(word)
+		}
+	}
+	return n.String()
+}
+
 // ToCamel converts a string to CamelCase
 func ToCamel(s string) string {
 	return toCamelInitCase(s, true)
 }
 
+// ToCamel converts a string to CamelCase
+func ToCamelWithMap(s string, wordMap map[string]string) string {
+	return toCamelInitCaseV2(s, true, wordMap)
+}
+
 // ToLowerCamel converts a string to lowerCamelCase
 func ToLowerCamel(s string) string {
 	return toCamelInitCase(s, false)
+}
+
+// ToLowerCamel converts a string to lowerCamelCase
+func ToLowerCamelWithMap(s string, wordMap map[string]string) string {
+	return toCamelInitCaseV2(s, false, wordMap)
 }

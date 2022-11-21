@@ -51,9 +51,33 @@ func toCamel(tb testing.TB) {
 		}
 	}
 }
+func toCamelWithMap(tb testing.TB) {
+	m := map[string]string{
+		"Id":  "ID",
+		"App": "APP",
+	}
+	cases := [][]string{
+		{"product_id", "ProductID"},
+		{"app_name", "APPName"},
+		{"app", "APP"},
+		{"i18n_app_id", "I18NAPPID"}, // TODO: i18n should also be a word.
+		{"res_name", "ResName"},
+	}
+	for _, i := range cases {
+		in := i[0]
+		out := i[1]
+		result := ToCamelWithMap(in, m)
+		if result != out {
+			tb.Errorf("%q (%q != %q)", in, result, out)
+		}
+	}
+}
 
 func TestToCamel(t *testing.T) {
 	toCamel(t)
+}
+func TestToCamelWithMap(t *testing.T) {
+	toCamelWithMap(t)
 }
 
 func BenchmarkToCamel(b *testing.B) {
